@@ -1,9 +1,16 @@
+import logging
 from datetime import datetime
 from enum import Enum
 
 import gspread
 from evdev import InputDevice, ecodes
 from oauth2client.service_account import ServiceAccountCredentials
+
+
+LOG_LEVEL = logging.INFO
+LOG_FILE = "/var/log/mylog"
+LOG_FORMAT = "%(asctime)s %(levelname)s %(message)s"
+logging.basicConfig(filename=LOG_FILE, format=LOG_FORMAT, level=LOG_LEVEL)
 
 
 SCOPES = [
@@ -15,7 +22,6 @@ SCOPES = [
 
 
 SHEET_NAME = "NEW Cat Tracker 2020"
-
 
 PUMPKIN_PEE_COLUMN = 1
 PUMPKIN_POO_COLUMN = 2
@@ -59,26 +65,35 @@ def log(col):
     sheet.update_cell(row, col, get_time_string())
 
 
+BUTTON_MAPPING = {
+    Button.Y.value: (PUMPKIN_PEE_COLUMN, "Pumpkin peed"),
+    Button.X.value: (PUMPKIN_POO_COLUMN, "Pumpkin pooed"),
+    Button.SELECT.value: (PUMPKIN_PUKE_COLUMN, "Pumpkin puked"),
+    Button.B.value: (PATCH_PEE_COLUMN, "Patch peed"),
+    Button.A.value: (PATCH_POO_COLUMN, "Patch pooed"),
+    Button.START.value: (PATCH_PUKE_COLUMN, "Patch puked"),
+}
+
+
 def main():
+    exception = None
+    try:
+        for event in GAMEPAD.read_loop():
+            if event.type == ecodes.EV_KEY and event.value:
+                col, log_msg = BUTTON_MAPPING.get(event.code, (0,""))
 
-    BUTTON_MAPPING = {
-        Button.Y.value: (PUMPKIN_PEE_COLUMN, "Pumpkin peed"),
-        Button.X.value: (PUMPKIN_POO_COLUMN, "Pumpkin pooed"),
-        Button.SELECT.value: (PUMPKIN_PUKE_COLUMN, "Pumpkin puked"),
-        Button.B.value: (PATCH_PEE_COLUMN, "Patch peed"),
-        Button.A.value: (PATCH_POO_COLUMN, "Patch pooed"),
-        Button.START.value: (PATCH_PUKE_COLUMN, "Patch puked"),
-    }
+                if not col:
+                    continue
 
-    for event in GAMEPAD.read_loop():
-        if event.type == ecodes.EV_KEY and event.value:
-            col, log_msg = BUTTON_MAPPING.get(event.code, (0,""))
+                log(col)
+                logging.INFO(log_msg)
+    except Exception as ex:
+        exception = ex
+    finally:
+        if type(exception, KeyboardInterrupt):
+            exit()
 
-            if not col:
-                continue
-
-            log(col)
-            print(log_msg)
-
+        logging.ERROR(str(exception))
+        main()
 
 main()
