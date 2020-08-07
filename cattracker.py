@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from enum import Enum
+import sys
 
 import gspread
 from evdev import InputDevice, ecodes
@@ -8,7 +9,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 
 LOG_LEVEL = logging.INFO
-LOG_FILE = "/var/log/mylog"
+LOG_FILE = "logs/cattracker"
 LOG_FORMAT = "%(asctime)s %(levelname)s %(message)s"
 logging.basicConfig(filename=LOG_FILE, format=LOG_FORMAT, level=LOG_LEVEL)
 
@@ -77,6 +78,8 @@ BUTTON_MAPPING = {
 
 def main():
     exception = None
+    exit = False
+    print("Running")
     try:
         for event in GAMEPAD.read_loop():
             if event.type == ecodes.EV_KEY and event.value:
@@ -86,14 +89,17 @@ def main():
                     continue
 
                 log(col)
-                logging.INFO(log_msg)
+                logging.info(log_msg)
+    except KeyboardInterrupt:
+        print("Exiting")
+        exit = True
+        sys.exit()
     except Exception as ex:
         exception = ex
     finally:
-        if type(exception, KeyboardInterrupt):
-            exit()
+        logging.error(str(exception))
+        if not exit:
+            main()
 
-        logging.ERROR(str(exception))
-        main()
-
-main()
+if __name__ == '__main__':
+    main()
