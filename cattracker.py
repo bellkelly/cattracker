@@ -32,7 +32,7 @@ PATCH_POO_COLUMN = 5
 PATCH_PUKE_COLUMN = 6
 
 
-GAMEPAD = InputDevice("/dev/input/event0")
+GAMEPAD = InputDevice("/dev/input/event4")
 
 
 class Button(Enum):
@@ -44,6 +44,10 @@ class Button(Enum):
     START = 297
 
 
+def get_current_year():
+    now = datetime.now()
+    return now.strftime("%Y")
+
 def get_current_month():
     now = datetime.now()
     return now.strftime("%B")
@@ -51,7 +55,16 @@ def get_current_month():
 def get_current_sheet():
     client = login()
     month = get_current_month()
-    return client.open(SHEET_NAME).worksheet(month)
+    name = get_current_doc_name() 
+    return client.open(name).worksheet(month)
+
+def get_current_doc_name():
+    year = get_current_year()
+    
+    if year == "2020":
+        return SHEET_NAME
+
+    return f"Cat Tracker {year}"    
 
 def get_time_string():
     return datetime.now().strftime("%m/%d/%Y %I:%M %p")

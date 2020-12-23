@@ -3,12 +3,12 @@ Description="Track cat litter"
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/python3 -u cattracker.py
-WorkingDirectory=/home/pi/cattracker
+ExecStart=/usr/bin/python3 cattracker.py
+WorkingDirectory=/home/cattracker/cattracker
 StandardOutput=inherit
 StandardInput=inherit
 Restart=always
-User=pi
+User=cattracker
 
 [Install]
 WantedBy=multi-user.target
