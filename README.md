@@ -24,5 +24,5 @@ sudo systemctl start cattracker.service
 To enable at startup:
 
 ```
-sudo systemctl enable myscript.service
+sudo systemctl enable cattracker.service
 ```
