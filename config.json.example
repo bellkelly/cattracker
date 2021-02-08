@@ -1,0 +1,45 @@
+{
+    "input_path": "/dev/input/event0",
+    "input_code_mapping": {
+        "288": {
+            "name": "X",
+            "data_column": 1,
+            "log_message": ""
+        },
+        "289": {
+            "name": "A",
+            "data_column": 2,
+            "log_message": ""
+        },
+        "290": {
+            "name": "B",
+            "data_column": 3,
+            "log_message": ""
+        },
+        "291": {
+            "name": "Y",
+            "data_column": 4,
+            "log_message": ""
+        },
+        "292": {
+            "name": "L",
+            "data_column": 5,
+            "log_message": ""
+        },
+        "293": {
+            "name": "R",
+            "data_column": 6,
+            "log_message": ""
+        },
+        "296": {
+            "name": "Select",
+            "data_column": 7,
+            "log_message": ""
+        },
+        "297": {
+            "name": "Start",
+            "data_column": 8,
+            "log_message": ""
+        }
+    }
+}

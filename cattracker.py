@@ -1,17 +1,16 @@
-import logging
+import json
+import logging.config
+from sys import exit
 from datetime import datetime
-from enum import Enum
-import sys
 
 import gspread
 from evdev import InputDevice, ecodes
 from oauth2client.service_account import ServiceAccountCredentials
 
 
-LOG_LEVEL = logging.INFO
-LOG_FILE = "logs/cattracker"
-LOG_FORMAT = "%(asctime)s %(levelname)s %(message)s"
-logging.basicConfig(filename=LOG_FILE, format=LOG_FORMAT, level=LOG_LEVEL)
+logging.config.fileConfig('logging.ini')
+log = logging.getLogger(__name__)
+log.debug("Logging is configured.")
 
 
 SCOPES = [
@@ -22,97 +21,84 @@ SCOPES = [
 ]
 
 
-SHEET_NAME = "NEW Cat Tracker 2020"
-
-PUMPKIN_PEE_COLUMN = 1
-PUMPKIN_POO_COLUMN = 2
-PUMPKIN_PUKE_COLUMN = 3
-PATCH_PEE_COLUMN = 4
-PATCH_POO_COLUMN = 5
-PATCH_PUKE_COLUMN = 6
-
-
-GAMEPAD = InputDevice("/dev/input/event4")
-
-
-class Button(Enum):
-    X = 288
-    A = 289
-    B = 290
-    Y = 291
-    SELECT = 296
-    START = 297
-
-
-def get_current_year():
-    now = datetime.now()
-    return now.strftime("%Y")
-
-def get_current_month():
-    now = datetime.now()
-    return now.strftime("%B")
-
 def get_current_sheet():
+    """
+    Return the sheet for the current month.
+
+    Expect the name of the Google Sheet to be "Cat Tracker <YEAR>"
+    and the name of the worksheet to be the full month name.
+    """
     client = login()
-    month = get_current_month()
-    name = get_current_doc_name() 
-    return client.open(name).worksheet(month)
+    now = datetime.now()
+    month = now.strftime("%B")
+    year = now.strftime("%Y")
+    doc_name = f"Cat Tracker {year}"
+    return client.open(doc_name).worksheet(month)
 
-def get_current_doc_name():
-    year = get_current_year()
-    
-    if year == "2020":
-        return SHEET_NAME
-
-    return f"Cat Tracker {year}"    
-
-def get_time_string():
-    return datetime.now().strftime("%m/%d/%Y %I:%M %p")
 
 def login():
-    creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", SCOPES)
+    """
+    Login to Goole Drive.
+    """
+    creds = ServiceAccountCredentials.from_json_keyfile_name(
+        "credentials.json", SCOPES)
     return gspread.authorize(creds)
 
-def log(col):
+
+def create_entry(col):
+    """
+    Append a timestamp to the first empty row in column col.
+    """
     sheet = get_current_sheet()
     row = len(sheet.col_values(col)) + 1
-    sheet.update_cell(row, col, get_time_string())
-
-
-BUTTON_MAPPING = {
-    Button.Y.value: (PUMPKIN_PEE_COLUMN, "Pumpkin peed"),
-    Button.X.value: (PUMPKIN_POO_COLUMN, "Pumpkin pooed"),
-    Button.SELECT.value: (PUMPKIN_PUKE_COLUMN, "Pumpkin puked"),
-    Button.B.value: (PATCH_PEE_COLUMN, "Patch peed"),
-    Button.A.value: (PATCH_POO_COLUMN, "Patch pooed"),
-    Button.START.value: (PATCH_PUKE_COLUMN, "Patch puked"),
-}
+    timestamp = datetime.now().strftime("%m/%d/%Y %I:%M %p")
+    sheet.update_cell(row, col, timestamp)
 
 
 def main():
-    exception = None
-    exit = False
-    print("Running")
-    try:
-        for event in GAMEPAD.read_loop():
-            if event.type == ecodes.EV_KEY and event.value:
-                col, log_msg = BUTTON_MAPPING.get(event.code, (0,""))
+    """
+    Continuously process input from external controller.
 
-                if not col:
+    Button presses are configured in the config.json file
+    to map to a column in a Google Sheet. When the button
+    is pressed, a timestamp is logged in that column and a
+    log message is added to the configured log file.
+    """
+    exception = None
+    terminate = False
+
+    print("Ready to track cat data...")
+
+    with open('config.json', 'r') as config_file:
+        config = json.load(config_file)
+
+    gamepad = InputDevice(config["input_path"])
+    button_mapping = config["input_code_mapping"]
+
+    try:
+        for event in gamepad.read_loop():
+            if event.type == ecodes.EV_KEY and event.value:
+                button_data = button_mapping.get(event.code, {})
+
+                if not button_data:
                     continue
 
-                log(col)
-                logging.info(log_msg)
+                create_entry(button_data.get("data_column", 0))
+                log(button_data.get("log_message", ""))
+
     except KeyboardInterrupt:
         print("Exiting")
-        exit = True
-        sys.exit()
+        terminate = True
+        exit()
+
     except Exception as ex:
         exception = ex
+
     finally:
         logging.error(str(exception))
-        if not exit:
+        if not terminate:
             main()
+
 
 if __name__ == '__main__':
     main()
