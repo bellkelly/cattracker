@@ -68,5 +68,5 @@ Either the pi user cannot see the input device or the device has been assigned t
 
 ## TODO
 
-[ ] Script some of the setup (copying the configuration example file and making the log directory, installing the app as a system service) .
-[ ] Link to spreadsheet template.
+- [ ] Script some of the setup (copying the configuration example file and making the log directory, installing the app as a system service.
+- [ ] Link to spreadsheet template.
