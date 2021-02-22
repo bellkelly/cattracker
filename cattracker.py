@@ -78,8 +78,7 @@ def main():
     try:
         for event in gamepad.read_loop():
             if event.type == ecodes.EV_KEY and event.value:
-                button_data = button_mapping.get(event.code, {})
-
+                button_data = button_mapping.get(str(event.code), {})
                 if not button_data:
                     continue
 
