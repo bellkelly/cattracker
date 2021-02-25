@@ -77,13 +77,14 @@ def main():
 
     try:
         for event in gamepad.read_loop():
+            log.debug(event.code)
             if event.type == ecodes.EV_KEY and event.value:
                 button_data = button_mapping.get(str(event.code), {})
                 if not button_data:
                     continue
 
                 create_entry(button_data.get("data_column", 0))
-                log(button_data.get("log_message", ""))
+                log.info(button_data.get("log_message", ""))
 
     except KeyboardInterrupt:
         print("Exiting")
