@@ -83,8 +83,8 @@ def main():
                 if not button_data:
                     continue
 
-                create_entry(button_data.get("data_column", 0))
                 log.info(button_data.get("log_message", ""))
+                create_entry(button_data.get("data_column", 0))
 
     except KeyboardInterrupt:
         print("Exiting")
